@@ -3,7 +3,7 @@ defmodule Guarderia.Repo.Migrations.CreateUpdatedAtTriggers do
 
   def up do
     execute("""
-    CREATE OR REPLACE FUNCTION actualizar_fecha()
+    CREATE OR REPLACE FUNCTION set_updated_at()
     RETURNS TRIGGER AS $$
     BEGIN
       NEW.updated_at = NOW();
@@ -12,24 +12,58 @@ defmodule Guarderia.Repo.Migrations.CreateUpdatedAtTriggers do
     $$ LANGUAGE plpgsql;
     """)
 
-    execute("""
-    CREATE TRIGGER tr_roles_upd
-    BEFORE UPDATE ON roles
-    FOR EACH ROW
-    EXECUTE PROCEDURE actualizar_fecha();
-    """)
+    # 🔥 Lista de tablas con updated_at
+    tablas = [
+      "roles",
+      "usuarios",
+      "empleados",
+      "clientes",
+      "mascotas",
+      "reservas",
+      "servicios",
+      "tarifas",
+      "planes_servicio",
+      "checkins",
+      "pagos",
+      "media_mascotas",
+      "notificaciones",
+      "recordatorios",
+      "mensajes_enviados"
+    ]
 
-    execute("""
-    CREATE TRIGGER tr_usuarios_upd
-    BEFORE UPDATE ON usuarios
-    FOR EACH ROW
-    EXECUTE PROCEDURE actualizar_fecha();
-    """)
+    Enum.each(tablas, fn tabla ->
+      execute("""
+      CREATE TRIGGER tr_#{tabla}_updated_at
+      BEFORE UPDATE ON #{tabla}
+      FOR EACH ROW
+      EXECUTE FUNCTION set_updated_at();
+      """)
+    end)
   end
 
   def down do
-    execute("DROP TRIGGER IF EXISTS tr_roles_upd ON roles;")
-    execute("DROP TRIGGER IF EXISTS tr_usuarios_upd ON usuarios;")
-    execute("DROP FUNCTION IF EXISTS actualizar_fecha();")
+    tablas = [
+      "roles",
+      "usuarios",
+      "empleados",
+      "clientes",
+      "mascotas",
+      "reservas",
+      "servicios",
+      "tarifas",
+      "planes_servicio",
+      "checkins",
+      "pagos",
+      "media_mascotas",
+      "notificaciones",
+      "recordatorios",
+      "mensajes_enviados"
+    ]
+
+    Enum.each(tablas, fn tabla ->
+      execute("DROP TRIGGER IF EXISTS tr_#{tabla}_updated_at ON #{tabla};")
+    end)
+
+    execute("DROP FUNCTION IF EXISTS set_updated_at();")
   end
 end
